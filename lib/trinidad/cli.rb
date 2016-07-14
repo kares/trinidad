@@ -20,7 +20,7 @@ module Trinidad
       begin
         options_parser.parse!(argv)
       rescue OptionParser::InvalidOption => e
-        p e, options_parser
+        puts "#{$0}: #{e.message}" # trinidad: invalid option: -x
         exit(1)
       end
 
@@ -59,7 +59,7 @@ module Trinidad
     attr_writer :config_file
 
     def options_parser
-      require 'optparse'
+      require 'trinidad/vendor/optparse.rb'
       @parser ||= OptionParser.new do |opts|
         opts.banner = 'Usage: trinidad [server options]'
         opts.separator ''
