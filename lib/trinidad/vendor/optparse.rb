@@ -9,6 +9,7 @@
 #
 
 module Trinidad # trinidad
+# @private
 class OptionParser
   # :stopdoc:
   NoArgument = [NO_ARGUMENT = :NONE, nil]
@@ -572,18 +573,11 @@ class OptionParser
   DefaultList.long[''] = Switch::NoArgument.new {throw :terminate}
 
 
-  COMPSYS_HEADER = "
-typeset -A opt_args
-local context state line
-
-_arguments -s -S \
-"
-
   def compsys(to, name = File.basename($0)) # :nodoc:
     to << "#compdef #{name}\n"
-    to << COMPSYS_HEADER
+    to << "\ntypeset -A opt_args\nlocal context state line\n\n_arguments -s -S "
     visit(:compsys, {}, {}) {|o, d|
-      to << %Q[  "#{o}[#{d.gsub(/([\"\[\]])/, '\\\\\1')}]" \\\n]
+      to << "  \"#{o}[#{d.gsub(/([\"\[\]])/, '\\\\\1')}]\" \\\n"
     }
     to << "  '*:file:_files' && return 0\n"
   end
@@ -622,28 +616,6 @@ _arguments -s -S \
   Officious['*-completion-zsh'] = proc do |parser|
     Switch::OptionalArgument.new do |arg|
       parser.compsys(STDOUT, arg)
-      exit
-    end
-  end
-
-  #
-  # --version
-  # Shows version string if Version is defined.
-  #
-  Officious['version'] = proc do |parser|
-    Switch::OptionalArgument.new do |pkg|
-      if pkg
-        begin
-          require 'optparse/version'
-        rescue LoadError
-        else
-          show_version(*pkg.split(/,/)) or
-            abort("#{parser.program_name}: no version found in package #{pkg}")
-          exit
-        end
-      end
-      v = parser.ver or abort("#{parser.program_name}: version unknown")
-      puts v
       exit
     end
   end
@@ -791,42 +763,6 @@ _arguments -s -S \
   #
   def program_name
     @program_name || File.basename($0, '.*')
-  end
-
-  # for experimental cascading :-)
-  alias set_banner banner=
-  alias set_program_name program_name=
-  alias set_summary_width summary_width=
-  alias set_summary_indent summary_indent=
-
-  # Version
-  attr_writer :version
-  # Release code
-  attr_writer :release
-
-  #
-  # Version
-  #
-  def version
-    @version || (defined?(::Version) && ::Version)
-  end
-
-  #
-  # Release code
-  #
-  def release
-    @release || (defined?(::Release) && ::Release) || (defined?(::RELEASE) && ::RELEASE)
-  end
-
-  #
-  # Returns version string from program_name, version and release.
-  #
-  def ver
-    if v = version
-      str = "#{program_name} #{[v].join('.')}"
-      str << " (#{v})" if v = release
-      str
-    end
   end
 
   def warn(mesg = $!)
