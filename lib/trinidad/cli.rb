@@ -20,7 +20,7 @@ module Trinidad
       begin
         options_parser.parse!(argv)
       rescue OptionParser::InvalidOption => e
-        puts "#{$0}: #{e.message}" # trinidad: invalid option: -x
+        puts "#{File.basename($0, '.*')}: #{e.message}" # trinidad: invalid option: -x
         exit(1)
       end
 
