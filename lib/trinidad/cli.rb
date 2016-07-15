@@ -61,7 +61,6 @@ module Trinidad
     def options_parser
       require 'trinidad/vendor/optparse.rb'
       @parser ||= OptionParser.new do |opts|
-        opts.banner = 'Usage: trinidad [server options]'
         opts.separator ''
 
         opts.on('-d', '--dir ROOT_DIR', 'web application root directory',
