@@ -70,7 +70,7 @@ module Trinidad
         end
 
         opts.on('-e', '--env ENVIRONMENT', 'rack (rails) environment',
-          "default: #{default(:environment)}") do |env|
+          "default: '#{default(:environment)}'") do |env|
           default_options[:environment] = env
         end
 
@@ -85,7 +85,7 @@ module Trinidad
         end
 
         opts.on('-c', '--context CONTEXT_PATH', 'application context path',
-          "default: #{default(:context_path)}") do |path|
+          "default: '#{default(:context_path)}'") do |path|
           default_options[:context_path] = path
         end
 
@@ -94,13 +94,12 @@ module Trinidad
           default_options[:monitor] = monitor
         end
 
-        opts.on('-t', '--threadsafe', 'force thread-safe mode (use shared runtime)') do
+        opts.on('-t', '--threadsafe', 'use thread-safe shared runtime mode (default)') do
           default_options[:jruby_min_runtimes] = 1
           default_options[:jruby_max_runtimes] = 1
         end
 
-        opts.on('--runtimes MIN:MAX', 'use given number of min/max jruby runtimes',
-          "default: #{default(:jruby_min_runtimes)}:#{default(:jruby_max_runtimes)}") do
+        opts.on('--runtimes MIN:MAX', 'use given min/max jruby runtimes for pooling') do
           |min_max| min, max = min_max.split(':')
           default_options[:jruby_min_runtimes] = min.to_i if min
           default_options[:jruby_max_runtimes] = max.to_i if max
@@ -126,14 +125,12 @@ module Trinidad
           default_options[:ssl] = { :port => (port || 3443).to_i }
         end
 
-        opts.on('--java_lib LIB_DIR', '--lib LIB_DIR (deprecated use --java_lib)',
-          'contains .jar files used by the app',
+        opts.on('--java_lib LIB_DIR', 'contains .jar files used by the web app',
           "default: #{default(:java_lib)}") do |lib|
           default_options[:java_lib] = lib
         end
 
-        opts.on('--java_classes CLASSES_DIR', '--classes CLASSES_DIR (deprecated use --java_classes)',
-          'contains java classes used by the app',
+        opts.on('--java_classes CLASSES_DIR', 'directory to load compiled classes from',
           "default: #{default_java_classes}") do |classes|
           default_options[:java_classes] = classes
         end
@@ -144,8 +141,7 @@ module Trinidad
           end
         end
 
-        opts.on('--apps_base APPS_BASE_DIR', '--apps APPS_BASE_DIR (deprecated use --apps_base)',
-          'set applications base directory') do |apps_base|
+        opts.on('--apps_base APPS_BASE_DIR', 'set applications base directory') do |apps_base|
           default_options[:apps_base] = apps_base
         end
 
@@ -160,21 +156,46 @@ module Trinidad
 
         opts.on_tail('-a', '--ajp [AJP_PORT]', 'enable the AJP web protocol',
           "default port: 8009") do |port|
-          Helpers.deprecated "option ( -a / --ajp )"
+          Helpers.deprecated "option -a / --ajp [AJP_PORT]"
           default_options[:ajp] = { :port => (port || 8009).to_i }
         end
 
+        opts.on_tail
 
-        opts.on_tail('-g', '--log LEVEL', 'set logging level') do |log|
-          Helpers.deprecated "option ( -g / --log )"
+        # deprecated (hidden) options :
+
+        on_hidden(opts, '--lib LIB_DIR') do |lib|
+          Helpers.deprecated "option --lib (use --java_lib LIB_DIR)"
+          default_options[:java_lib] = lib
+        end
+
+        on_hidden(opts, '--classes CLASSES_DIR') do |classes|
+          Helpers.deprecated "option --classes (use --java_classes CLASSES_DIR)"
+          default_options[:java_classes] = classes
+        end
+
+        on_hidden(opts, '--apps APPS_BASE_DIR') do |apps_base|
+          Helpers.deprecated "option --apps (use --apps_base APPS_BASE_DIR)"
+          default_options[:apps_base] = apps_base
+        end
+
+        on_hidden(opts, '-g LEVEL') do |log| # set logging level
+          Helpers.deprecated "option -g (use --log LEVELS)"
           default_options[:log] = log
         end
 
-        opts.on_tail
+        # (supported) internal options :
+
+        on_hidden(opts, '--log LEVELS') do |log| # set logging level(s)
+          if log.index('=') # "=WARN,org.sample=INFO" -> { ''=>'WARN', 'org.sample'=>'INFO' }
+            log = log.split(',').inject({}) { |h, e| e = e.split('='); h[e.first] = e.last; h }
+          end
+          default_options[:log] = log
+        end
       end
     end
 
-    private
+    protected
 
     def default(key)
       default_options[key] || Configuration::DEFAULTS[key]
@@ -183,6 +204,14 @@ module Trinidad
     def default_java_classes
       default(:java_classes) ||
         ( default(:java_lib) && File.join(default(:java_lib), 'classes') )
+    end
+
+    private
+
+    def on_hidden(o, *opts, &block)
+      list = o.base; res = o.make_switch(opts, block)
+      # [#<Trinidad::OptionParser::Switch::NoArgument:0x1a8a8f7c...>, ["g"], ["log"], nil, []]
+      res[1...-2].flatten.each { |opt| list.long[opt] ||= res[0] }
     end
 
   end

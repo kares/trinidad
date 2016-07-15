@@ -36,17 +36,20 @@ module Trinidad
       string
     end
 
+    SKIP_NONE = [].freeze
+
     # a Hash like `symbolize` helper
-    def symbolize(hash, deep = true)
+    def symbolize(hash, skip = true) # deep = true
       new_options = hash.class.new
+      skip = SKIP_NONE if skip == true
       hash.each do |key, value|
-        if deep && value.is_a?(Array) # YAML::Omap is an Array
+        if skip && ! skip.include?(key) && value.is_a?(Array) # YAML::Omap is an Array
           array = new_options[key.to_sym] = value.class.new
           value.each do |v|
-            array << ( hash_like?(v) ? symbolize(v, deep)  : v )
+            array << ( hash_like?(v) ? symbolize(v, true)  : v )
           end
-        elsif deep && hash_like?(value)
-          new_options[key.to_sym] = symbolize(value, deep)
+        elsif skip && ! skip.include?(key) && hash_like?(value)
+          new_options[key.to_sym] = symbolize(value, true)
         else
           new_options[key.to_sym] = value
         end

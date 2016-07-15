@@ -55,6 +55,17 @@ describe Trinidad::Logging do
     logger.level.to_s.should == 'WARNING'
   end
 
+  it "does configure logger levels" do
+    logger = java.util.logging.Logger.getLogger("")
+    logger.level = java.util.logging.Level::INFO
+
+    Trinidad::Logging.configure!('' => 'WARNING', 'org.example' => :debug, 'Foo::Bar' => 'error')
+
+    expect( java.util.logging.Logger.getLogger("").level.to_s ).to eql 'WARNING'
+    expect( java.util.logging.Logger.getLogger('org.example').level.to_s ).to eql 'FINE'
+    expect( java.util.logging.Logger.getLogger('Foo::Bar').level.to_s ).to eql 'SEVERE'
+  end
+
   # web-app logger configuration :
 
   context "web-app" do

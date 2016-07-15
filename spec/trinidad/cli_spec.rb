@@ -148,9 +148,14 @@ describe Trinidad::CLI do
     subject.parse(args)[:address].should == 'trinidad.host'
   end
 
-  it "accepts the option --log to set the logging level" do
+  it "accepts the option --log to set logging level" do
     args = '--log WARNING'.split
     subject.parse(args)[:log].should == 'WARNING'
+  end
+
+  it "accepts the option --log to set logger levels" do
+    args = '--log =WARN,org.example=INFO'.split
+    subject.parse(args)[:log].should == { '' => 'WARN', 'org.example' => 'INFO' }
   end
 
   it "accepts the option --apps_base to set the applications base directory" do

@@ -18,12 +18,16 @@ module Trinidad
 
     # Configure the ("global") logging sub-system.
     # If invoked twice, does only actually configure once.
-    def self.configure(log_level = nil)
+    def self.configure(config = nil)
       return false if @@configured
       @@configured = true
 
       root_logger = JUL::Logger.getLogger('')
-      level = parse_log_level(log_level, :INFO)
+      if config.is_a?(Hash)
+        level = parse_log_level(:INFO)
+      else
+        level = parse_log_level(config, :INFO); config = false
+      end
 
       runtime_out = JRuby.runtime.out
       runtime_err = JRuby.runtime.err
@@ -36,19 +40,24 @@ module Trinidad
         end
 
         root_logger.add_handler(out_handler)
-        if runtime_out != Java::JavaLang::System.out ||
-           runtime_err != Java::JavaLang::System.err
+        if ! runtime_out.equal?(Java::JavaLang::System.out) ||
+           ! runtime_err.equal?(Java::JavaLang::System.err)
          # NOTE: only add err handler if customized STDOUT or STDERR :
         err_handler = new_console_handler runtime_err
-        err_handler.formatter = console_formatter
-        err_handler.level = level.intValue > JUL::Level::WARNING.intValue ?
-          level : JUL::Level::WARNING # only >= WARNING on STDERR
+        err_handler.formatter = console_formatter; warn = JUL::Level::WARNING
+        err_handler.level = level.intValue > warn.intValue ? level : warn # only >= WARNING on STDERR
 
          root_logger.add_handler(err_handler)
         end
         set_log_level(root_logger, level)
       end
       silence_tomcat_loggers
+
+      config.each do |logger, level|
+        if level = parse_log_level(level, nil)
+          set_log_level JUL::Logger.getLogger(logger.to_s), level
+        end
+      end if config
 
       root_logger
     end

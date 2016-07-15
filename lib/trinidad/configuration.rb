@@ -42,6 +42,9 @@ module Trinidad
       :trap => true
     }
 
+    SKIP_SYMBOLIZE = [ :log ]
+    private_constant :SKIP_SYMBOLIZE rescue nil
+
     def initialize(options = {})
       @config = DEFAULTS.clone
       update!(options)
@@ -122,7 +125,7 @@ module Trinidad
 
     # @private
     def self.symbolize_options(options)
-      Helpers.symbolize(options, true)
+      Helpers.symbolize(options, SKIP_SYMBOLIZE)
     end
 
     # @private
