@@ -84,9 +84,15 @@ module Trinidad
           default_options[:public] = public
         end
 
-        opts.on('-c', '--context CONTEXT_PATH', 'application context path',
+        opts.on('-c', '--context CONTEXT_PATH', 'application context path (or descriptor)',
           "default: '#{default(:context_path)}'") do |path|
-          default_options[:context_path] = path
+          # allow pointing to a context.xml file with --context option :
+          # ... mostly as the default META-INF/context.xml is cumbersome
+          if File.extname(path) == '.xml' # convention to avoid File.exist?
+            default_options[:context_xml] = File.expand_path(path)
+          else
+            default_options[:context_path] = path
+          end
         end
 
         opts.on('--monitor', '--monitor MONITOR_FILE', 'monitor for application re-deploys',
