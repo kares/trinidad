@@ -161,6 +161,8 @@ module Trinidad
         'org.apache.catalina.core.StandardService',
         'org.apache.catalina.core.StandardEngine',
         'org.apache.catalina.startup.ContextConfig',
+        # tldConfig.noTldSummary=At least one JAR was scanned for TLDs yet contained no TLDs.
+        'org.apache.catalina.startup.TldConfig',
       ]
       for name in logger_names
         logger = JUL::Logger.getLogger(name)
