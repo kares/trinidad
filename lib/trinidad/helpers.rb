@@ -10,7 +10,7 @@ module Trinidad
 
     # Print a warning (using `Kernel.warn`).
     def self.warn(msg)
-      super unless silence? # Kernel.warn
+      Kernel.warn(msg) unless silence? # Kernel.warn
     end
 
     module_function
